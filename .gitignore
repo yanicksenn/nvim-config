@@ -3,3 +3,6 @@
 
 # Pack folder
 pack/
+
+# Bazel
+bazel-*

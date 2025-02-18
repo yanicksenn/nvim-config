@@ -69,3 +69,4 @@ vim.g.neoterm_autoscroll = 1
 vim.g.neoterm_size = 15
 vim.g.neoterm_default_mod = 'botright horizontal'
 
+require('custom.ezbazel')
