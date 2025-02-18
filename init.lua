@@ -70,3 +70,18 @@ vim.g.neoterm_size = 15
 vim.g.neoterm_default_mod = 'botright horizontal'
 
 require('custom.ezbazel')
+
+vim.api.nvim_create_user_command('EzBazel', function (opts)
+	bazel_target_picker(function (selection)
+		local command = string.format("bazel %s %s", opts.args, selection)
+		vim.api.nvim_command(string.format(":T %s", command))
+	end)
+end, {
+	nargs = '?',
+	desc = 'Simple tool to find and perform actions with a bazel target'
+})
+
+vim.keymap.set('n', '<leader>bb', ':EzBazel build<CR>', { desc = 'Bazel build' })
+vim.keymap.set('n', '<leader>br', ':EzBazel run<CR>', { desc = 'Bazel run' })
+vim.keymap.set('n', '<leader>br', ':EzBazel test<CR>', { desc = 'Bazel test' })
+

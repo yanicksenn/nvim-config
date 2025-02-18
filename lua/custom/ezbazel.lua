@@ -4,66 +4,41 @@ local conf = require("telescope.config").values
 local actions = require('telescope.actions')
 local actions_state = require('telescope.actions.state')
 
-local is_bazel_workspace = function () 
-	response = vim.system(
-			{ 'bazel', 'info', 'workspace' }, 
-			{ text = true, cwd = vim.fn.expand("%:p:h") }
-		):wait()
-	if response.code ~= 0 or not response.stdout or response.stdout == '' then
+get_bazel_workspace = function () 
+	local workspace = vim.fn.system('bazel info workspace 2> /dev/null')
+	if vim.v.shell_error ~= 0 then
 		return nil
 	end
-	return response.stdout
+	return workspace
 end
 
-local find_bazel_targets = function (root)
-	local current_dir = vim.fn.expand("%:p:h")
-	local bazel_query = build_bazel_query(root, current_dir)
-	response = vim.system(
-			{ 'bazel', 'query', bazel_query }, 
-			{ text = true, cwd = current_dir }
-		):wait()
-	if response.code ~= 0 or not response.stdout or response.stdout == '' then
-		return {}
-	end
-	return extract_bazel_targets(response.stdout)
-end
-
-local build_bazel_query = function (root, current_dir) 
-	local target_base = string.sub(current_dir, string.len(root))
-	if string.len(target_base) == 0 then
-		return "//..."
-	end
-	return "//" .. target_base .. "/..."
-end
-
-local extract_bazel_targets = function (input_string)
-	local targets = {} 
-  	for target in input_string:gmatch("//[^\n]+") do
-		table.insert(targets, target)
-	end
-	return targets
-end
-
-local bazel_target_picker = function ()
-	bazel_workspace = is_bazel_workspace()
-	if not bazel_workspace then
+bazel_target_picker = function (completion)
+	local workspace = get_bazel_workspace()
+	print(workspace)
+	if not workspace then
 		print("Not in a bazel workspace")
 		return
 	end
-
-	bazel_targets = find_bazel_targets(bazel_workspace)
-	for target in bazel_targets do
-		print(target)
-	end
-	-- opts = {}
-	-- pickers.new(opts, {
-	-- 	prompt_title = "Bazel Targets",
-	-- 	finder = finders.new_table {
-	-- 		results = bazel_targets,
-	-- 	},
-	-- 	sorter = conf.generic_sorter(opts),
-	-- }):find()
-
+	
+	local opts = {}
+	local relative_directory = string.sub(vim.fn.expand("%:p:h"), #workspace + 1)
+	local query = "//" .. relative_directory .. "/..."
+	
+	local finder = finders.new_oneshot_job({ 'bazel', 'query', query }, {})
+	local picker = pickers.new(opts, {
+		results_title = 'bazel targets',
+		prompt_title = 'bazel targets',
+		finder = finder, 
+		sorter = conf.generic_sorter(opts),
+		attach_mappings = function (bufnr, map)
+			actions.select_default:replace(function () 
+				actions.close(bufnr)
+				local selection = actions_state.get_selected_entry()
+				completion(selection[1])
+			end)
+			return true
+		end
+	})
+	picker:find()
 end
 
-bazel_target_picker()
