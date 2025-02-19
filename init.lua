@@ -54,9 +54,27 @@ require('lspconfig')['gopls'].setup {
   capabilities = capabilities
 }
 
+vim.g.mapleader = ' '
+vim.g.maplocalleader = ' '
+
+vim.opt.cursorline = true
 vim.opt.number = true
-vim.opt.relativenumber = true
 vim.opt.guicursor = "n-v-i-c:block-Cursor"
+vim.opt.scrolloff = 10
+
+-- Clear highlights on search when pressing <Esc> in normal mode
+vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
+
+-- Sync clipboard between OS and Neovim.
+--  Schedule the setting after `UiEnter` because it can increase startup-time.
+--  Remove this option if you want your OS clipboard to remain independent.
+--  See `:help 'clipboard'`
+vim.schedule(function()
+  vim.opt.clipboard = 'unnamedplus'
+end)
+
+-- Decrease update time
+vim.opt.updatetime = 250
 
 require('telescope').setup({
 	defaults = {
