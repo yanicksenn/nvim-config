@@ -12,7 +12,7 @@ get_bazel_workspace = function ()
 	return workspace
 end
 
-bazel_target_picker = function (completion)
+bazel_target_picker = function (kind_pattern, completion)
 	local workspace = get_bazel_workspace()
 	print(workspace)
 	if not workspace then
@@ -20,10 +20,11 @@ bazel_target_picker = function (completion)
 		return
 	end
 	
+	kind_pattern = kind_pattern or ".*"
 	local opts = {}
 	local relative_directory = string.sub(vim.fn.expand("%:p:h"), #workspace + 1)
-	local query = "//" .. relative_directory .. "/..."
-	
+	local query = string.format('kind("%s", //%s/...)', kind_pattern, relative_directory)	
+
 	local finder = finders.new_oneshot_job({ 'bazel', 'query', query }, {})
 	local picker = pickers.new(opts, {
 		results_title = 'bazel targets',

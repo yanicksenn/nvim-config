@@ -48,7 +48,6 @@ cmp.setup({
   })
 })
 
-
 -- Set up lspconfig.
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 require('lspconfig')['gopls'].setup {
@@ -58,6 +57,16 @@ require('lspconfig')['gopls'].setup {
 vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.guicursor = "n-v-i-c:block-Cursor"
+
+require('telescope').setup({
+	defaults = {
+		file_ignore_patterns = {
+			  '.git/',
+			  '*.asset',
+			  '*.meta',
+		},
+	},
+})
 
 local builtin = require'telescope.builtin'
 vim.keymap.set('n', '<leader>ff', builtin.find_files, { desc = 'Telescope find files' })
@@ -69,11 +78,29 @@ vim.g.neoterm_autoscroll = 1
 vim.g.neoterm_size = 15
 vim.g.neoterm_default_mod = 'botright horizontal'
 
+vim.g.netrw_list_hide = '.git/, *.asset, *.meta'
+vim.g.netrw_hide = 1
+
 require('custom.ezbazel')
 
 vim.api.nvim_create_user_command('EzBazel', function (opts)
-	bazel_target_picker(function (selection)
-		local command = string.format("bazel %s %s", opts.args, selection)
+	local kind_pattern
+	local bazel_args
+	if opts.args == "build" then
+		kind_pattern = ".*"
+		bazel_args = ""
+	end
+	if opts.args == "test" then
+		kind_pattern = "test"
+		bazel_args = "--test_output=all"
+	end
+	if opts.args == "run" then
+		kind_pattern = "binary"
+		bazel_args = ""
+	end
+	bazel_target_picker(kind_pattern, function (selection)
+		local command = string.format("bazel %s %s %s", opts.args, bazel_args, selection)
+		print(command)	
 		vim.api.nvim_command(string.format(":T %s", command))
 	end)
 end, {
@@ -83,5 +110,5 @@ end, {
 
 vim.keymap.set('n', '<leader>bb', ':EzBazel build<CR>', { desc = 'Bazel build' })
 vim.keymap.set('n', '<leader>br', ':EzBazel run<CR>', { desc = 'Bazel run' })
-vim.keymap.set('n', '<leader>br', ':EzBazel test<CR>', { desc = 'Bazel test' })
+vim.keymap.set('n', '<leader>bt', ':EzBazel test<CR>', { desc = 'Bazel test' })
 
